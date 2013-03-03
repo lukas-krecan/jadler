@@ -15,6 +15,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,15 +26,19 @@ import java.net.Socket;
 import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
 
-import static net.jadler.Jadler.port;
+import static net.jadler.Jadler.closeJadler;
 import static net.jadler.Jadler.initJadler;
 import static net.jadler.Jadler.onRequest;
-import static net.jadler.Jadler.closeJadler;
+import static net.jadler.Jadler.port;
+import static net.jadler.Jadler.recordedRequests;
+import static net.jadler.matchers.MethodRequestMatcher.requestMethod;
+import static net.jadler.matchers.QueryStringRequestMatcher.requestQueryString;
 import static org.hamcrest.Matchers.anything;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -236,6 +241,9 @@ public class JadlerStubbingIntegrationTest {
         
         int status = client.executeMethod(method);
         assertThat(status, is(201));
+
+        assertThat(recordedRequests(), hasItem(requestMethod(equalTo("GET"))));
+        assertThat(recordedRequests(), hasSize(1));
     }
     
     
@@ -257,6 +265,9 @@ public class JadlerStubbingIntegrationTest {
 
         int status = client.executeMethod(method);
         assertThat(status, is(201));
+
+        assertThat(recordedRequests(), hasItem(requestQueryString(equalTo("localhost"))));
+        assertThat(recordedRequests(), hasSize(1));
     }
     
     

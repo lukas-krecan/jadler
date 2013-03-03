@@ -94,6 +94,7 @@ public class JadlerMockerTest {
         
         verify(server, times(1)).start();
         verify(server, times(1)).registerResponseProvider(eq(jadlerMocker));
+        verify(server, times(1)).registerRequestRecorder(eq(jadlerMocker));
         verifyNoMoreInteractions(server);
     }
     

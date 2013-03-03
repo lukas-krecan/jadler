@@ -6,10 +6,14 @@ package net.jadler;
 
 import java.nio.charset.Charset;
 import net.jadler.exception.JadlerException;
+import java.util.List;
+
 import net.jadler.stubbing.RequestStubbing;
 import net.jadler.stubbing.server.StubHttpServerManager;
 import net.jadler.stubbing.server.StubHttpServer;
 import net.jadler.stubbing.ResponseStubbing;
+
+import javax.servlet.http.HttpServletRequest;
 
 
 /**
@@ -433,6 +437,13 @@ public final class Jadler {
     public static RequestStubbing onRequest() {
         checkInitialized();
         return jadlerMockerContainer.get().onRequest();
+    }
+
+    /**
+     * Returns list of recorded requests for verification.
+     */
+    public static List<HttpServletRequest> recordedRequests() {
+        return jadlerMockerContainer.get().recordedRequests();
     }
     
     

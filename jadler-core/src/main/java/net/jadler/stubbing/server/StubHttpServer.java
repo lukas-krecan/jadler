@@ -4,6 +4,7 @@
  */
 package net.jadler.stubbing.server;
 
+import net.jadler.stubbing.RequestRecorder;
 import net.jadler.stubbing.StubResponseProvider;
 
 
@@ -24,6 +25,12 @@ public interface StubHttpServer {
      * @param responseProvider response provider to use to retrieve response prescriptions.
      */
     void registerResponseProvider(StubResponseProvider responseProvider);
+
+    /**
+     * Registers request recorder. This component records executed request for future verification.
+     * @param requestRecorder request recorder to, well, record requests
+     */
+    void registerRequestRecorder(RequestRecorder requestRecorder);
     
     /**
      * Starts the underlying http server. From now, the server must be able to respond

@@ -4,15 +4,11 @@
  */
 package net.jadler;
 
+import net.jadler.stubbing.*;
 import net.jadler.stubbing.server.StubHttpServerManager;
 import java.io.IOException;
-import net.jadler.stubbing.StubResponseProvider;
 import java.nio.charset.Charset;
-import net.jadler.stubbing.RequestStubbing;
-import net.jadler.stubbing.StubbingFactory;
-import net.jadler.stubbing.Stubbing;
-import net.jadler.stubbing.StubResponse;
-import net.jadler.stubbing.StubRule;
+
 import net.jadler.exception.JadlerException;
 import net.jadler.stubbing.server.StubHttpServer;
 import javax.servlet.http.HttpServletResponse;
@@ -22,13 +18,15 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
-import net.jadler.stubbing.Stubber;
+
 import net.jadler.stubbing.server.MultipleReadsHttpServletRequest;
 import org.apache.commons.collections.MultiMap;
 import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static java.util.Collections.synchronizedList;
 
 
 /**
@@ -45,12 +43,13 @@ import org.slf4j.LoggerFactory;
  * <br /><br />
  * This class is stateful and thread-safe.
  */
-public class JadlerMocker implements StubHttpServerManager, Stubber, StubResponseProvider {
+public class JadlerMocker implements StubHttpServerManager, Stubber, StubResponseProvider, RequestRecorder {
 
     private final StubHttpServer server;
     private final StubbingFactory stubbingFactory;
     private final List<Stubbing> stubbings;
     private Deque<StubRule> httpStubRules;
+    private List<HttpServletRequest> recordedRequests;
     
     private MultiMap defaultHeaders;
     private int defaultStatus;
@@ -101,6 +100,7 @@ public class JadlerMocker implements StubHttpServerManager, Stubber, StubRespons
         this.stubbingFactory = stubbingFactory;
         
         this.httpStubRules = new LinkedList<StubRule>();
+        this.recordedRequests = synchronizedList(new LinkedList<HttpServletRequest>()); //synchronized, more requests can arrive in parallel
     }
 
     /**
@@ -126,6 +126,7 @@ public class JadlerMocker implements StubHttpServerManager, Stubber, StubRespons
         logger.debug("starting the underlying stub server...");
         
         this.server.registerResponseProvider(this);
+        this.server.registerRequestRecorder(this);
 
         try {
             server.start();
@@ -299,5 +300,14 @@ public class JadlerMocker implements StubHttpServerManager, Stubber, StubRespons
             throw new IllegalStateException("Once first http request has been served, "
                     + "you can't do any stubbing anymore.");
         }
+    }
+
+    public List<HttpServletRequest> recordedRequests() {
+        return recordedRequests;
+    }
+
+    @Override
+    public void recordRequest(HttpServletRequest request) {
+        recordedRequests.add(request);
     }
 }

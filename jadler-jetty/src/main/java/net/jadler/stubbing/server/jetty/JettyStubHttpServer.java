@@ -4,17 +4,17 @@
  */
 package net.jadler.stubbing.server.jetty;
 
+import net.jadler.stubbing.RequestRecorder;
 import net.jadler.stubbing.StubResponseProvider;
 import net.jadler.stubbing.server.StubHttpServer;
-import org.eclipse.jetty.server.Handler;
+import org.apache.commons.lang.Validate;
+import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.commons.lang.Validate;
-import org.eclipse.jetty.server.Connector;
 
 
 /**
@@ -26,6 +26,8 @@ public class JettyStubHttpServer implements StubHttpServer {
     private static final Logger logger = LoggerFactory.getLogger(JettyStubHttpServer.class);
     private final Server server;
     private final Connector selectChannelConnector;
+    private StubResponseProvider ruleProvider;
+    private RequestRecorder requestRecorder;
 
     public JettyStubHttpServer() {
         this(0);
@@ -44,9 +46,29 @@ public class JettyStubHttpServer implements StubHttpServer {
     @Override
     public void registerResponseProvider(final StubResponseProvider ruleProvider) {
         Validate.notNull(ruleProvider, "ruleProvider cannot be null");
+        this.ruleProvider = ruleProvider;
+        updateHandlers();
+    }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void registerRequestRecorder(RequestRecorder requestRecorder) {
+        Validate.notNull(requestRecorder, "requestRecorder cannot be null");
+        this.requestRecorder = requestRecorder;
+        updateHandlers();
+    }
+
+    private void updateHandlers() {
         final HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[] {new StubHandler(ruleProvider), new DefaultHandler() });
+        if (requestRecorder!=null) {
+            handlers.addHandler(new RequestRecordingHandler(requestRecorder));
+        }
+        if (ruleProvider!=null) {
+            handlers.addHandler(new StubHandler(ruleProvider));
+        }
+        handlers.addHandler(new DefaultHandler());
         server.setHandler(handlers);
     }
 
