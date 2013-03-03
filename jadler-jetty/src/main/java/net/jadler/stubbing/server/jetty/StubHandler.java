@@ -4,6 +4,7 @@
  */
 package net.jadler.stubbing.server.jetty;
 
+import net.jadler.stubbing.RequestRecorder;
 import net.jadler.stubbing.StubResponse;
 import net.jadler.stubbing.StubResponseProvider;
 import org.eclipse.jetty.server.Request;
@@ -23,8 +24,11 @@ public class StubHandler extends AbstractHandler {
 
     private final StubResponseProvider ruleProvider;
 
-    public StubHandler(final StubResponseProvider ruleProvider) {
+    private final RequestRecorder requestRecorder;
+
+    public StubHandler(final StubResponseProvider ruleProvider, final RequestRecorder requestRecorder) {
         this.ruleProvider = ruleProvider;
+        this.requestRecorder = requestRecorder;
     }
 
 
@@ -33,13 +37,19 @@ public class StubHandler extends AbstractHandler {
                        HttpServletRequest request, HttpServletResponse response)
             throws IOException, ServletException {
 
-        final StubResponse stubResponse = this.ruleProvider.provideStubResponseFor(request);
-        setResponseHeaders(stubResponse.getHeaders(), response);
-        setStatus(stubResponse.getStatus(), response);
-        processTimeout(stubResponse.getTimeout());
-        writeResponseBody(stubResponse.getBody(), response);
+        net.jadler.stubbing.Request req = RequestUtils.convert(request);
+        if (requestRecorder!=null) {
+            requestRecorder.recordRequest(req);
+        }
+        if (ruleProvider!=null) {
+            final StubResponse stubResponse = this.ruleProvider.provideStubResponseFor(req);
+            setResponseHeaders(stubResponse.getHeaders(), response);
+            setStatus(stubResponse.getStatus(), response);
+            processTimeout(stubResponse.getTimeout());
+            writeResponseBody(stubResponse.getBody(), response);
 
-        baseRequest.setHandled(true);
+            baseRequest.setHandled(true);
+        }
     }
 
     

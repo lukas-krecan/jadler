@@ -62,12 +62,7 @@ public class JettyStubHttpServer implements StubHttpServer {
 
     private void updateHandlers() {
         final HandlerList handlers = new HandlerList();
-        if (requestRecorder!=null) {
-            handlers.addHandler(new RequestRecordingHandler(requestRecorder));
-        }
-        if (ruleProvider!=null) {
-            handlers.addHandler(new StubHandler(ruleProvider));
-        }
+        handlers.addHandler(new StubHandler(ruleProvider, requestRecorder));
         handlers.addHandler(new DefaultHandler());
         server.setHandler(handlers);
     }

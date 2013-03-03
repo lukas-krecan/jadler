@@ -5,8 +5,8 @@
 package net.jadler;
 
 import net.jadler.stubbing.*;
+import net.jadler.stubbing.Request;
 import net.jadler.stubbing.server.StubHttpServerManager;
-import java.io.IOException;
 import java.nio.charset.Charset;
 
 import net.jadler.exception.JadlerException;
@@ -17,9 +17,7 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
 
-import net.jadler.stubbing.server.MultipleReadsHttpServletRequest;
 import org.apache.commons.collections.MultiMap;
 import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.commons.lang.Validate;
@@ -27,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.util.Collections.synchronizedList;
+import static java.util.Collections.unmodifiableList;
 
 
 /**
@@ -49,7 +48,7 @@ public class JadlerMocker implements StubHttpServerManager, Stubber, StubRespons
     private final StubbingFactory stubbingFactory;
     private final List<Stubbing> stubbings;
     private Deque<StubRule> httpStubRules;
-    private List<HttpServletRequest> recordedRequests;
+    private List<Request> recordedRequests;
     
     private MultiMap defaultHeaders;
     private int defaultStatus;
@@ -100,7 +99,7 @@ public class JadlerMocker implements StubHttpServerManager, Stubber, StubRespons
         this.stubbingFactory = stubbingFactory;
         
         this.httpStubRules = new LinkedList<StubRule>();
-        this.recordedRequests = synchronizedList(new LinkedList<HttpServletRequest>()); //synchronized, more requests can arrive in parallel
+        this.recordedRequests = synchronizedList(new LinkedList<Request>()); //synchronized, more requests can arrive in parallel
     }
 
     /**
@@ -233,16 +232,7 @@ public class JadlerMocker implements StubHttpServerManager, Stubber, StubRespons
      * {@inheritDoc} 
      */
     @Override
-    public StubResponse provideStubResponseFor(final HttpServletRequest req) {
-        final MultipleReadsHttpServletRequest multiReadsRequest;
-        try {
-            multiReadsRequest = new MultipleReadsHttpServletRequest(req);            
-        }
-        catch (final IOException e) {
-            throw new JadlerException("A problem occurred while wrapping a request", e);
-        }
-
-        
+    public StubResponse provideStubResponseFor(final Request request) {
         synchronized(this) {
             if (this.configurable) {
                 this.configurable = false;
@@ -252,7 +242,7 @@ public class JadlerMocker implements StubHttpServerManager, Stubber, StubRespons
         
         for (final Iterator<StubRule> it = this.httpStubRules.descendingIterator(); it.hasNext(); ) {
             final StubRule rule = it.next();
-            if (rule.matchedBy(multiReadsRequest)) {
+            if (rule.matchedBy(request)) {
                 final StringBuilder sb = new StringBuilder();
                 sb.append("Following rule will be applied:\n");
                 sb.append(rule);
@@ -268,7 +258,7 @@ public class JadlerMocker implements StubHttpServerManager, Stubber, StubRespons
             sb.append("The rule '");
             sb.append(rule);
             sb.append("' cannot be applied. Mismatch:\n");
-            sb.append(rule.describeMismatch(multiReadsRequest));
+            sb.append(rule.describeMismatch(request));
             sb.append("\n");
         }
         logger.info(sb.toString());
@@ -302,12 +292,12 @@ public class JadlerMocker implements StubHttpServerManager, Stubber, StubRespons
         }
     }
 
-    public List<HttpServletRequest> recordedRequests() {
-        return recordedRequests;
+    public List<Request> recordedRequests() {
+        return unmodifiableList(recordedRequests);
     }
 
     @Override
-    public void recordRequest(HttpServletRequest request) {
+    public void recordRequest(Request request) {
         recordedRequests.add(request);
     }
 }

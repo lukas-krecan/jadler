@@ -4,19 +4,26 @@
  */
 package net.jadler.matchers;
 
+import net.jadler.stubbing.Request;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.mock.web.MockHttpServletRequest;
 import org.hamcrest.Matcher;
+
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.Mock;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertThat;
 import static net.jadler.matchers.ParameterRequestMatcher.requestParameter;
 import static org.hamcrest.Matchers.*;
-
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 
 @RunWith(MockitoJUnitRunner.class)
@@ -28,7 +35,7 @@ public class ParameterRequestMatcherTest {
     private static final String NO_VALUE_PARAMETER_NAME = "param2";
     private static final String UNDEFINED_PARAMETER = "param3";
     
-    private MockHttpServletRequest request;
+    private Request request;
     
     @Mock
     Matcher<? super List<String>> mockMatcher;
@@ -36,9 +43,11 @@ public class ParameterRequestMatcherTest {
 
     @Before
     public void setUp() throws Exception {
-        this.request = new MockHttpServletRequest();
-        this.request.addParameter(PARAMETER_NAME, new String[] {PARAMETER_VALUE1, PARAMETER_VALUE2});
-        this.request.addParameter(NO_VALUE_PARAMETER_NAME, new String[] {});
+        this.request = mock(Request.class);
+        Map<String, List<String>> params = new HashMap<String, List<String>>();
+        params.put(PARAMETER_NAME, asList(PARAMETER_VALUE1, PARAMETER_VALUE2));
+        params.put(NO_VALUE_PARAMETER_NAME, Collections.<String>emptyList());
+        when(request.getParameters()).thenReturn(params);
     }
     
     
